@@ -1,0 +1,51 @@
+/*
+    See the JupyterLab Developer Guide for useful CSS Patterns:
+
+    https://jupyterlab.readthedocs.io/en/stable/developer/css.html
+*/
+.kernels-container {
+  display: flex;
+  align-items: center;
+  padding: 30px;
+  gap: 20px;
+}
+.kernel-info {
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 3px;
+  padding: 10px;
+  margin-bottom: 20px;
+  transition: 0.2s ease-in-out;
+}
+.kernel-info p {
+  text-align: center;
+}
+.kernel-info:hover {
+  box-shadow: 0 0 11px rgba(33, 33, 33, 0.2);
+}
+
+.kernel-info p {
+  margin: 5px 0;
+}
+
+.kernel-info hr {
+  margin-top: 15px;
+  margin-bottom: 10px;
+  border: none;
+  border-top: 1px solid #ccc;
+}
+
+.kernel-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kernel-logo img {
+  width: 60px;
+  height: 60px;
+}

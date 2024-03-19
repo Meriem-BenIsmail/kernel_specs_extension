@@ -1,0 +1,5 @@
+{
+  "packageManager": "python",
+  "packageName": "available_kernel_menu",
+  "uninstallInstructions": "Use your Python package manager (pip, conda, etc.) to uninstall the package available_kernel_menu"
+}

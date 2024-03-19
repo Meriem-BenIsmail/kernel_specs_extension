@@ -1,0 +1,22 @@
+{
+  "jupyter.lab.shortcuts": [],
+  "title": "available_kernel_menu",
+  "description": "available_kernel_menu settings.",
+  "jupyter.lab.menus": {
+    "main": [
+      {
+        "id": "get_kernels_menu",
+        "label": "Available Kernels Widget",
+        "rank": 80,
+        "items": [
+          {
+            "command": "widgets:open-kernel-info-tab"
+          }
+        ]
+      }
+    ]
+  },
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}
