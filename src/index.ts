@@ -5,6 +5,9 @@ import { Menu, Widget } from '@lumino/widgets';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { IMainMenu } from '@jupyterlab/mainmenu';
 import { EditorLanguageRegistry } from '@jupyterlab/codemirror';
+import { ConsolePanel } from '@jupyterlab/console';
+import { SessionContext } from '@jupyterlab/apputils';
+
 class KernelInfoWidget extends Widget {
   constructor(serviceManager: any) {
     super();
@@ -58,7 +61,7 @@ function addKernelMenuItems(
   palette: any,
   mainMenu: IMainMenu
 ) {
-  const { commands } = app;
+  const { commands, shell } = app;
   const menu = new Menu({ commands: app.commands });
   menu.title.label = 'Available Kernels Menu';
   mainMenu.addMenu(menu);
@@ -99,11 +102,22 @@ function addKernelMenuItems(
       commands.addCommand(startConsoleCommand, {
         label: `New ${key} console`,
         execute: async () => {
-          await app.commands.execute('console:create', {
-            path: '.',
-            factory: 'Console',
-            kernel: key
-          });
+          try {
+            const kernel = await serviceManager.sessions.startNew({
+              name: key,
+              type: 'console',
+              path: '.'
+            });
+            const sessionContext = new SessionContext({
+              session: kernel
+            });
+            await sessionContext.ready;
+            const panel = new ConsolePanel({ sessionContext });
+            shell.add(panel, 'main');
+            shell.activateById(panel.id);
+          } catch (error) {
+            console.error('Error starting console:', error);
+          }
         }
       });
 
