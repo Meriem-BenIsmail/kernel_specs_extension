@@ -61,11 +61,21 @@ function addKernelMenuItems(
   const { commands } = app;
   const menu = new Menu({ commands: app.commands });
   menu.title.label = 'Available Kernels Menu';
-  mainMenu.addMenu(menu, true);
+  mainMenu.addMenu(menu);
   Object.entries(serviceManager.kernelspecs.specs.kernelspecs).forEach(
     ([key, value]: [string, any]) => {
       const kernelMenu = new Menu({ commands: app.commands });
       kernelMenu.title.label = value.display_name;
+      const language =
+        serviceManager.kernelspecs.specs.kernelspecs[key].language;
+      const defaultLanguages = EditorLanguageRegistry.getDefaultLanguages();
+      let fileExtensions: string[] | any;
+
+      defaultLanguages.forEach(item => {
+        if (item.name.toLocaleLowerCase() === language.toLocaleLowerCase()) {
+          fileExtensions = item.extensions;
+        }
+      });
 
       const startNotebookCommand = `widgets:start-notebook-${key}`;
       commands.addCommand(startNotebookCommand, {
@@ -97,50 +107,36 @@ function addKernelMenuItems(
         }
       });
 
-      const createFileCommand = `widgets:create-file-${key}`;
-      commands.addCommand(createFileCommand, {
-        label: `New ${key} file`,
-        execute: async () => {
-          const language =
-            serviceManager.kernelspecs.specs.kernelspecs[key].language;
-          const defaultLanguages = EditorLanguageRegistry.getDefaultLanguages();
-          let fileExtensions: any;
-
-          defaultLanguages.forEach(item => {
-            if (
-              item.name.toLocaleLowerCase() === language.toLocaleLowerCase()
-            ) {
-              fileExtensions = item.extensions;
-            }
-          });
-
-          console.log(`File extensions for kernel '${key}':`, fileExtensions);
-
-          const randomExtension =
-            fileExtensions[Math.floor(Math.random() * fileExtensions.length)];
-          try {
-            const model = await serviceManager.contents.newUntitled({
-              type: 'file',
-              path: '.',
-              ext: randomExtension,
-              language: language
-            });
-
-            app.commands.execute('docmanager:open', {
-              path: model.path
-            });
-          } catch (error) {
-            console.error('Error creating untitled file:', error);
-          }
-          console.log(
-            `File with extension '${randomExtension}' created successfully in kernel '${key}'.`
-          );
-        }
-      });
-
       kernelMenu.addItem({ command: startNotebookCommand });
       kernelMenu.addItem({ command: startConsoleCommand });
-      kernelMenu.addItem({ command: createFileCommand });
+
+      const fileSubMenu = new Menu({ commands: app.commands });
+      fileSubMenu.title.label = `Open a ${key} file`;
+      fileExtensions.forEach((extension: string) => {
+        const openFileCommand = `widgets:open-file-${key}-${extension}`;
+        commands.addCommand(openFileCommand, {
+          label: `${extension} file`,
+          execute: async () => {
+            try {
+              const model = await serviceManager.contents.newUntitled({
+                type: 'file',
+                path: '.',
+                ext: extension,
+                language: language
+              });
+
+              app.commands.execute('docmanager:open', {
+                path: model.path
+              });
+            } catch (error) {
+              console.error('Error creating untitled file:', error);
+            }
+          }
+        });
+        fileSubMenu.addItem({ command: openFileCommand });
+      });
+
+      kernelMenu.addItem({ type: 'submenu', submenu: fileSubMenu });
 
       menu.addItem({ type: 'submenu', submenu: kernelMenu });
     }
