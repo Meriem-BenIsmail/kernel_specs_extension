@@ -135,7 +135,7 @@ function addKernelMenuItems(
             });
             shell.add(panel, 'main');
             shell.activateById(panel.id);
-            sessionContext.changeKernel();
+            console.log(panel.id);
           } catch (error) {
             console.error('Error starting console:', error);
           }
