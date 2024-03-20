@@ -97,24 +97,45 @@ function addKernelMenuItems(
           });
         }
       });
+      let contentFactory: ConsolePanel.IContentFactory;
 
       const startConsoleCommand = `widgets:start-console-${key}`;
       commands.addCommand(startConsoleCommand, {
         label: `New ${key} console`,
         execute: async () => {
           try {
-            const kernel = await serviceManager.sessions.startNew({
+            const sessionManager = app.serviceManager.sessions;
+            const specsManager = app.serviceManager.kernelspecs;
+            const rendermime = app.rendermime;
+            const manager = app.shell.widgets;
+            const mimeTypeService = app.docRegistry.mimeTypeService;
+            /* const kernel = await serviceManager.sessions.startNew({
               name: key,
               type: 'console',
               path: '.'
-            });
+            });*/
             const sessionContext = new SessionContext({
-              session: kernel
+              sessionManager: sessionManager,
+              specsManager: specsManager,
+              kernelPreference: serviceManager.sessions.startNew({
+                name: key,
+                type: 'console',
+                path: '.'
+              })
             });
+
             await sessionContext.ready;
-            const panel = new ConsolePanel({ sessionContext });
+
+            const panel = new ConsolePanel({
+              rendermime: rendermime,
+              contentFactory: contentFactory,
+              manager: manager,
+              mimeTypeService: mimeTypeService,
+              sessionContext: sessionContext
+            });
             shell.add(panel, 'main');
             shell.activateById(panel.id);
+            sessionContext.changeKernel();
           } catch (error) {
             console.error('Error starting console:', error);
           }
