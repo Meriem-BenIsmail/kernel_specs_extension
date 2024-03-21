@@ -1,59 +1,11 @@
 import { JupyterFrontEndPlugin } from '@jupyterlab/application';
-import { KernelManager } from '@jupyterlab/services';
 import { ICommandPalette } from '@jupyterlab/apputils';
-import { Menu, Widget } from '@lumino/widgets';
+import { Menu } from '@lumino/widgets';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { IMainMenu } from '@jupyterlab/mainmenu';
 import { EditorLanguageRegistry } from '@jupyterlab/codemirror';
 import { ConsolePanel } from '@jupyterlab/console';
 import { SessionContext } from '@jupyterlab/apputils';
-
-class KernelInfoWidget extends Widget {
-  constructor(serviceManager: any) {
-    super();
-    this.addClass('kernel-info-widget');
-    this.id = `kernel-info-widget-${Date.now()}`;
-    this.title.label = 'Kernel Information';
-    this.title.closable = true;
-    this.fetchKernelInfo(serviceManager);
-  }
-  async fetchKernelInfo(serviceManager: any) {
-    try {
-      const kernelSpecs = await serviceManager.kernelspecs.specs;
-      const kernelspecs = kernelSpecs.kernelspecs;
-
-      const content = document.createElement('div');
-      content.classList.add('kernels-container');
-      Object.entries(kernelspecs).forEach(([key, value]: [string, any]) => {
-        console.log(value);
-        const logo = value.resources['logo-64x64'];
-        const kernelDiv = document.createElement('div');
-        kernelDiv.classList.add('kernel-info');
-        kernelDiv.innerHTML = `
-            <p>${value.display_name}</p>
-            <div class="kernel-logo">
-              <img src="${logo}" alt="${value.display_name}"></img>
-            </div>
-            `;
-        kernelDiv.addEventListener('click', async () => {
-          try {
-            const kernelManager = new KernelManager();
-            await kernelManager.startNew({ name: key });
-            console.log(`Kernel '${key}' started successfully.`);
-          } catch (error) {
-            console.error(`Error starting kernel '${key}':`, error);
-          }
-        });
-
-        content.appendChild(kernelDiv);
-      });
-      this.node.appendChild(content);
-    } catch (error) {
-      console.error('Error retrieving kernel information:', error);
-      this.node.textContent = 'Error retrieving kernel information';
-    }
-  }
-}
 
 function addKernelMenuItems(
   app: any,
@@ -105,27 +57,22 @@ function addKernelMenuItems(
         execute: async () => {
           try {
             const sessionManager = app.serviceManager.sessions;
-            const specsManager = app.serviceManager.kernelspecs;
+            const specsManager = app.serviceManager;
+
             const rendermime = app.rendermime;
             const manager = app.shell.widgets;
             const mimeTypeService = app.docRegistry.mimeTypeService;
-            /* const kernel = await serviceManager.sessions.startNew({
-              name: key,
-              type: 'console',
-              path: '.'
-            });*/
+
             const sessionContext = new SessionContext({
               sessionManager: sessionManager,
               specsManager: specsManager,
-              kernelPreference: serviceManager.sessions.startNew({
+              kernelPreference: await sessionManager.startNew({
                 name: key,
+                kernel: { name: key },
                 type: 'console',
                 path: '.'
               })
             });
-
-            await sessionContext.ready;
-
             const panel = new ConsolePanel({
               rendermime: rendermime,
               contentFactory: contentFactory,
@@ -135,7 +82,6 @@ function addKernelMenuItems(
             });
             shell.add(panel, 'main');
             shell.activateById(panel.id);
-            console.log(panel.id);
           } catch (error) {
             console.error('Error starting console:', error);
           }
@@ -185,21 +131,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
   optional: [ISettingRegistry],
   requires: [ICommandPalette, IMainMenu],
   activate: (app, palette, mainMenu: IMainMenu) => {
-    const { commands, shell, serviceManager } = app;
-    const openKernelInfoCommand = 'widgets:open-kernel-info-tab';
-    commands.addCommand(openKernelInfoCommand, {
-      label: 'Get Available Kernels',
-      caption: 'Open the Widgets to get available kernels',
-      execute: () => {
-        const widget = new KernelInfoWidget(serviceManager);
-        shell.add(widget, 'main');
-      }
-    });
-
-    palette.addItem({
-      command: openKernelInfoCommand,
-      category: 'Kernel Info Extension Examples'
-    });
+    const { serviceManager } = app;
 
     serviceManager.ready.then(() => {
       serviceManager.kernelspecs.ready.then(() => {
