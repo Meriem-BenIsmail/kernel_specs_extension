@@ -57,22 +57,24 @@ function addKernelMenuItems(
         execute: async () => {
           try {
             const sessionManager = app.serviceManager.sessions;
-            const specsManager = app.serviceManager;
+            const specsManager = app.serviceManager.kernelspecs;
 
             const rendermime = app.rendermime;
             const manager = app.shell.widgets;
             const mimeTypeService = app.docRegistry.mimeTypeService;
+            const session = await sessionManager.startNew({
+              name: `${key} console`,
+              kernel: { name: key },
+              type: 'console',
+              path: '.'
+            });
 
             const sessionContext = new SessionContext({
               sessionManager: sessionManager,
               specsManager: specsManager,
-              kernelPreference: await sessionManager.startNew({
-                name: key,
-                kernel: { name: key },
-                type: 'console',
-                path: '.'
-              })
+              kernelPreference: session
             });
+            await sessionContext.ready;
             const panel = new ConsolePanel({
               rendermime: rendermime,
               contentFactory: contentFactory,
